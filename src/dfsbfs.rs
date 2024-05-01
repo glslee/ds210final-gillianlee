@@ -93,3 +93,80 @@ impl Graph {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bfs() {
+        let mut graph = Graph::new();
+        graph.add_edge(1, 2);
+        graph.add_edge(1, 3);
+        graph.add_edge(2, 4);
+        graph.add_edge(3, 4);
+        graph.add_edge(4, 5);
+
+        let distances = graph.bfs(1);
+        assert_eq!(distances.get(&5), Some(&3));
+    }
+
+    #[test]
+    fn test_dfs() {
+        let mut graph = Graph::new();
+        graph.add_edge(1, 2);
+        graph.add_edge(1, 3);
+        graph.add_edge(2, 4);
+        graph.add_edge(3, 4);
+        graph.add_edge(4, 5);
+
+        let path_depth = graph.dfs(1, 5);
+        assert_eq!(path_depth, Some(3));
+    }
+
+    // Helper function to create a graph for testing average path length
+    fn setup_complex_graph() -> Graph {
+        let mut graph = Graph::new();
+        // Example complex graph structure
+        for i in 1..=10 {
+            for j in 1..=10 {
+                if i != j {
+                    graph.add_edge(i, j);  // Full connectivity among 10 nodes
+                }
+            }
+        }
+        graph
+    }
+
+    #[test]
+    fn test_top_degree_nodes() {
+        let graph = setup_complex_graph();
+        let top_nodes = graph.top_degree_nodes(5);
+        assert_eq!(top_nodes.len(), 5);
+        // Since all nodes have equal degree, the specific top nodes can vary
+        // but should all have the maximum degree of 9
+        for node in top_nodes {
+            assert_eq!(graph.adjacency_list.get(&node).unwrap().len(), 9);
+        }
+    }
+
+    #[test]
+    fn test_average_path_length_subset() {
+        let graph = setup_complex_graph();
+        let top_nodes = graph.top_degree_nodes(5); // Ensure this method itself is correct
+        let avg_length = graph.average_path_length_subset(&top_nodes);
+
+        // Diagnostic output if test fails
+        if avg_length != 1.0 {
+            for node in &top_nodes {
+                let distances = graph.bfs(*node);
+                let total: i32 = distances.values().sum();
+                let num_paths = distances.len() as i32;
+                println!("Node {}: Total distances sum = {}, Number of paths = {}, Average = {}", 
+                         node, total, num_paths, total as f64 / num_paths as f64);
+            }
+            panic!("Expected average path length of 1.0, got {}", avg_length);
+        }
+        assert_eq!(avg_length, 1.0);
+    }
+}
